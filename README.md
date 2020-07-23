@@ -2,7 +2,7 @@
 
 URDF model for Gazebo integrated with ROS.
 
-## Installation. ## 
+## Installation ## 
 
 We assume that you are working on Ubuntu 16.04 and already have installed ROS Kinetic. If not, follow the [ROS install guide](http://wiki.ros.org/kinetic/Installation/Ubuntu)
 
@@ -49,85 +49,67 @@ source ~/ros_workspace/devel/setup.sh
 
 ## How to use ##
 
-### Creating, saving and loading the Map ###
-
-Run the following commands below. Use the teleop to move the robot around to create an accurate and thorough map.
+### Simulation ###
 
 In Terminal 1, launch the Gazebo simulation:
 
 ```
-roslaunch rosbot_description rosbot_rviz_gmapping.launch
+roslaunch rosbot_description rosbot.launch
 ```
 
-In Terminal 2, start teleop and drive the ROSbot, observe in Rviz as the map is created:
+If Rviz is needed, then run the following instead:
 
 ```
-roslaunch rosbot_navigation rosbot_teleop.launch
+roslaunch rosbot_description rosbot_rviz.launch
 ```
 
-When you are satisfied with created map, you can save it. Open new terminal and save the map to some given path: 
+### Real Robot ###
+
+In Terminal 1, launch sensors:
 
 ```
-rosrun map_server map_saver -f ~/ros_workspace/src/rosbot_description/src/rosbot_navigation/maps/test_map
+roslaunch rosbot_description rosbot_hardware.launch
 ```
 
-Now to make saved map loading possible you have to close all previous terminals and run the following commands below. Once loaded, use rviz to set 2D Nav Goal and the robot will autonomously reach the indicated position
-
-In Terminal 1, launch the Gazebo simulation
+In Terminal 2, launch mobile base and estimator:
 
 ```
-roslaunch rosbot_description rosbot_rviz_amcl.launch
+roslaunch rosbot_ekf all.launch rosbot_pro:=true
 ```
 
-## Tips ##
+### Keyboard Teleop ###
 
-If you have any problems with laser scan it probably means that you don't have a dedicated graphic card (or lack appropriate drivers). If that's the case then you'll have to change couple of things in /rosbot_description/urdf/rosbot_gazebo file:
+In addition to previous steps (in Simulation or Real Robot), open a new terminal and run:
 
-Find:   `<!-- If you cant't use your GPU comment RpLidar using GPU and uncomment RpLidar using CPU gazebo plugin. -->`
-next coment RpLidar using GPU using `<!-- -->` from `<gazebo>` to `</gazebo>` like below:
-
- ```
- <!-- gazebo reference="rplidar">
-   <sensor type="gpu_ray" name="head_rplidar_sensor">
-     <pose>0 0 0 0 0 0</pose>
-     <visualize>false</visualize>
-     <update_rate>40</update_rate>
-     <ray>
-       <scan>
-         <horizontal>
-           <samples>720</samples>
-           <resolution>1</resolution>
-           <min_angle>-3.14159265</min_angle>
-           <max_angle>3.14159265</max_angle>
-         </horizontal>
-       </scan>
-       <range>
-         <min>0.2</min>
-         <max>30.0</max>
-         <resolution>0.01</resolution>
-       </range>
-       <noise>
-         <type>gaussian</type>
-         <mean>0.0</mean>
-         <stddev>0.01</stddev>
-       </noise>
-     </ray>
-     <plugin name="gazebo_ros_head_rplidar_controller" filename="libgazebo_ros_gpu_laser.so">
-       <topicName>/rosbot/laser/scan</topicName>
-       <frameName>rplidar</frameName>
-     </plugin>
-   </sensor>
- </gazebo -->
+```
+roslaunch rosbot_navigation keyboard_teleop.launch
 ```
 
-Now uncomment RpLidar using CPU plugin removing `<!-- -->`.
+## APIs ##
 
-If you want to make your laser scan visible just change:
-```
-<visualize>false</visualize>
-```
-to:
-```
-<visualize>true</visualize>
-```
-in the same plug in.
+According to [ROSbot manual](https://husarion.com/manuals/rosbot-manual/#ros-api), we have the following APIs available.
+
+<table>
+<thead>
+<tr><th>Topic</th><th>Message type</th><th>Direction</th><th>Node</th><th>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Description&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th></tr>
+</thead>
+<tbody>
+<tr><td><code>/mpu9250</code></td><td><code>rosbot_ekf/Imu</code></td><td>publisher</td><td><code>/serial_node</code></td><td>Raw IMU data in custom message type</td></tr>
+<tr><td><code>/range/fl</code></td><td><code>sensor_msgs/Range</code></td><td>publisher</td><td><code>/serial_node</code></td><td>Front left range sensor raw data</td></tr>
+<tr><td><code>/range/fr</code></td><td><code>sensor_msgs/Range</code></td><td>publisher</td><td><code>/serial_node</code></td><td>Front right range sensor raw data</td></tr>
+<tr><td><code>/range/rl</code></td><td><code>sensor_msgs/Range</code></td><td>publisher</td><td><code>/serial_node</code></td><td>Rear left range sensor raw data</td></tr>
+<tr><td><code>/range/rr</code></td><td><code>sensor_msgs/Range</code></td><td>publisher</td><td><code>/serial_node</code></td><td>Rear right range sensor raw data</td></tr>
+<tr><td><code>/joint_states</code></td><td><code>sensor_msgs/JointState</code></td><td>publisher</td><td><code>/serial_node</code></td><td>Wheels rotation angle</td></tr>
+<tr><td><code>/battery</code></td><td><code>sensor_msgs/BatteryState</code></td><td>publisher</td><td><code>/serial_node</code></td><td>Battery voltage</td></tr>
+<tr><td><code>/buttons</code></td><td><code>std_msgs/UInt8</code></td><td>publisher</td><td><code>/serial_node</code></td><td>User buttons state, details in <a href="#user-buttons">User buttons</a> section</td></tr>
+<tr><td><code>/pose</code></td><td><code>geometry_msgs/PoseStamped</code></td><td>publisher</td><td><code>/serial_node</code></td><td>Position based on encoders</td></tr>
+<tr><td><code>/odom/wheel</code></td><td><code>nav_msgs/Odometry</code></td><td>publisher</td><td><code>/msgs_conversion</code></td><td>Odometry based on wheel encoders</td></tr>
+<tr><td><code>/velocity</code></td><td><code>geometry_msgs/Twist</code></td><td>publisher</td><td><code>/serial_node</code></td><td>Odometry based on encoders</td></tr>
+<tr><td><code>/imu</code></td><td><code>sensor_msgs/Imu</code></td><td>publisher</td><td><code>/msgs_conversion</code></td><td>IMU data wrapped in standard ROS message type</td></tr>
+<tr><td><code>/odom</code></td><td><code>nav_msgs/Odometry</code></td><td>publisher</td><td><code>/rosbot_ekf</code></td><td>Odometry based on sensor fusion</td></tr>
+<tr><td><code>/tf</code></td><td><code>tf2_msgs/TFMessage</code></td><td>publisher</td><td><code>/rosbot_ekf</code></td><td>ROSbot position based on sensor fusion</td></tr>
+<tr><td><code>/set_pose</code></td><td><code>geometry_msgs/</code> <code>PoseWithCovarianceStamped</code></td><td>subscriber</td><td><code>/rosbot_ekf</code></td><td>Allow to set custom state of EKF</td></tr>
+<tr><td><code>/cmd_vel</code></td><td><code>geometry_msgs/Twist</code></td><td>subscriber</td><td><code>/serial_node</code></td><td>Velocity commands</td></tr>
+<tr><td><code>/config</code></td><td><code>rosbot_ekf/Configuration</code></td><td>service server</td><td><code>/serial_node</code></td><td>Allow to control behaviour of CORE2 board, detaild in <a href="#core2-config">CORE2 config</a> section</td></tr>
+</tbody>
+</table>
