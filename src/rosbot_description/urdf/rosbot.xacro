@@ -381,4 +381,12 @@
   </joint>
   <link name="range_rr"></link>
 
+  <joint name="imu_joint" type="fixed">
+    <axis xyz="0 1 0" />
+    <origin xyz="-0.1 0 0" rpy="0 0 0"/>
+    <parent link="top"/>
+    <child link="imu_link"/>
+  </joint>
+  <link name="imu_link"></link>
+
 </robot>
